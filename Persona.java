@@ -27,7 +27,8 @@ public class Persona extends Thread {
 		saltos = linea;
 		maxPaseo = paseos;
 		Calendar fecha = new GregorianCalendar();
-		semilla = (fecha.get(Calendar.MINUTE) + fecha.get(Calendar.SECOND) + fecha.get(Calendar.MILLISECOND)) % 100000;
+		//semilla = (fecha.get(Calendar.MINUTE) + fecha.get(Calendar.SECOND) + fecha.get(Calendar.MILLISECOND)) % 100000;
+		semilla = 4;
 		numeroDePisos = numPisos;
 		modo = mode;
 		tiempoSimulacion = tiempoSimula;

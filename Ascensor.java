@@ -39,16 +39,20 @@ public class Ascensor extends Thread {
 			abrirPuerta();
 			
 			while(true){
+				//System.out.println("Ha dormir un poquito");
 				Control.llamada.acquire();
+				//System.out.println("Alguien necesita de mis servicios!");
 				
 				if(Control.llamadasPiso[pisoActual]){
 					System.out.println("Ascensor "+pisoActual+" : Abro las puertas");
 					abrirPuerta();
 				}
 				else{
+					Control.llamada.acquire();
 					selSentido();
-				
+					
 					while(subir || bajar){
+
 						if(subir){
 							subirPlanta();
 							System.out.println("Ascensor: Subo una planta");
@@ -66,7 +70,7 @@ public class Ascensor extends Thread {
 						else
 							Control.mutex.release();
 						
-						selSentido();
+						cambiarSentido();
 					}
 				}
 				tiempo2 = System.currentTimeMillis();
@@ -117,41 +121,74 @@ public class Ascensor extends Thread {
 		Control.mutex.release();
 		Thread.sleep(1000);
 	}
-	private static void cambiarSentido() {
+	private static void cambiarSentido() throws InterruptedException {
+		boolean ok = true;
+		
 		if(subir){
-			subir = false;
-			bajar = true;
+			Control.mutex.acquire();
+			for(int i = (numPisos-1); i > pisoActual; i--){
+				if(Control.llamadasPiso[i]){
+					subir = true;
+					ok = false;
+					break;
+				}
+			}
+			Control.mutex.release();
+			
 		}
 		else{
-			if(bajar){
-				subir = true;
-				bajar = false;
+			Control.mutex.acquire();
+			for(int j = 0; j < pisoActual; j++){
+				if(Control.llamadasPiso[j]){
+					bajar = true;
+					ok = false;
+					break;
+				}
 			}
+			Control.mutex.release();
+		}
+		if(ok){
+			subir = false;
+			bajar = false;
 		}
 	}
 	private static void selSentido() throws InterruptedException {
-		int control;
+		int control = -1;
 		
-		Control.mutex.acquire();
-		for(control = 0; control < numPisos; control++){
-			if(Control.llamadasPiso[control] || Control.personasEnAscensor[control] > 0)
-				break;
-		}
-			
-		if(control < pisoActual){
-			subir = false;
-			bajar = true;
-		}
-		else{
-			if(control < numPisos){
+		if(pisoActual == 0 || pisoActual == (numPisos-1)){
+			if(pisoActual == 0){
 				subir = true;
 				bajar = false;
 			}
 			else{
 				subir = false;
-				bajar = false;
+				bajar = true;
 			}
 		}
-		Control.mutex.release();
+		else{
+			Control.mutex.acquire();
+			for(int i = 0; i < numPisos;i++){
+				if(Control.llamadasPiso[i]){
+					control = i;
+					break;
+				}
+			}
+			Control.mutex.release();
+			if(control < pisoActual && control != -1){
+				bajar = true;
+				subir = false;
+			}
+			else{
+				if(control != -1){
+					bajar = false;
+					subir = true;
+				}
+				else{
+					subir = false;
+					bajar = false;
+				}
+			}
+		}
+		
 	}
 }

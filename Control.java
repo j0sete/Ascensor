@@ -85,6 +85,7 @@ public class Control extends Thread {
 		catch(InterruptedException ie){
 			System.out.println("Fallo en try pulsarBoton");
 		}
+		llamada.release();
 	}
 	
 
