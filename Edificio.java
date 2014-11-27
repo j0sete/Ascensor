@@ -1,5 +1,7 @@
 package pkgAscensor;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class Edificio {
@@ -22,9 +24,34 @@ public class Edificio {
 		control.start();
 		ascensor.start();
 		
-		for(int i = 0; i < numPersonas; i++){
-			Persona p = new Persona(esDeterminista, maxPaseo, numPisos, tiempoSimula, fichero, i);
-			p.start();
+		if(esDeterminista){
+			try {	
+				Scanner datos = new Scanner(new File(fichero));
+				datos.nextLine();
+			
+				while(datos.hasNextLine()){
+					int tmp = datos.nextInt();
+					int[] car = new int[tmp*2];
+					int contador = 0;
+					while(contador < tmp*2){
+						car[contador] = datos.nextInt();
+						car[contador+1] = datos.nextInt();
+						contador+=2;
+					}
+					Persona p = new Persona(esDeterminista, car);
+					p.start();
+				}
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		
+		else{
+			for(int i = 0; i < numPersonas; i++){
+				Persona p = new Persona(esDeterminista, maxPaseo, numPisos, tiempoSimula);
+				p.start();
+			}
 		}
 		
 		try {

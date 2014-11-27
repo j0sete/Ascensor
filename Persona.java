@@ -1,11 +1,8 @@
 package pkgAscensor;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Random;
-import java.util.Scanner;
 
 public class Persona extends Thread {
 	
@@ -13,62 +10,56 @@ public class Persona extends Thread {
 	private int pasear;
 	private int maxPaseo = 2;
 	private int pisoActual;
-	private final int numeroDePisos;
-	private static int tiempoSimulacion;
-	private static volatile int saltos;
-	private static boolean modo;
-	private static volatile String fichero;
+	private int numeroDePisos = -1;
+	private boolean modo;
+	private int[] datosFichero;
 	
-	private static int semilla;
+	private static int semilla1, semilla2;
 	
-	Persona(boolean mode, int paseos, int numPisos, int tiempoSimula, String fichero, int linea){
+	Persona(boolean mode, int[] datos){
+		this.datosFichero = datos;
 		pisoActual = 0;
-		this.fichero = fichero;
-		saltos = linea;
+		modo = mode;
+	}
+	
+	Persona(boolean mode, int paseos, int numPisos, int tiempoSimula){
+		pisoActual = 0;
 		maxPaseo = paseos;
 		Calendar fecha = new GregorianCalendar();
-		//semilla = (fecha.get(Calendar.MINUTE) + fecha.get(Calendar.SECOND) + fecha.get(Calendar.MILLISECOND)) % 100000;
-		semilla = 4;
+		int contador = (fecha.get(Calendar.SECOND)) % 100000;
+		semilla1 = 1;
+		semilla2 = 1;
+		for(int i = 0; i<contador; i++){
+			semilla2 = semilla1 + semilla2;
+			semilla1 = semilla2 - semilla1;
+		}
 		numeroDePisos = numPisos;
 		modo = mode;
-		tiempoSimulacion = tiempoSimula;
 	}
 	
 	public void run(){
 		
 		int nuevaPlanta;
 		int numPaseos;
-		int i = 0;
 		int contador = 1;
-		Scanner sc = null;
 		
 		if(modo){
+			contador--;
 			try{
-				sc = new Scanner(new File(fichero));
-				sc.nextLine();
-				while(i < saltos){
-					sc.nextLine();
-					i++;
-				}
-				numPaseos = sc.nextInt();
-				while(!Control.fin && contador <= numPaseos){
-					System.out.println("Voy a darme mi paseo numero "+contador+" del dia");
-					pasear = sc.nextInt();
-					Thread.sleep(pasear);
-					nuevaPlanta = sc.nextInt();
+				while(!Control.fin && contador < datosFichero.length){
+					System.out.println("Voy a darme mi paseo numero "+(contador+1)+" del dia");
+					pasear = datosFichero[contador];
+					Thread.sleep(pasear*1000);
+					nuevaPlanta = datosFichero[contador+1];
 					Control.llamadaPiso(pisoActual);
 					Ascensor.personasPiso[pisoActual].acquire();
 					Thread.sleep(1000);
-					System.out.println("Persona = "+nuevaPlanta);
 					Control.pulsarBoton(nuevaPlanta);
 					Ascensor.personasAscensor[nuevaPlanta].acquire();
 					pisoActual = nuevaPlanta;
-					contador++;
+					contador+=2;
 				}
-			} catch(InterruptedException ie){ } catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} catch(InterruptedException ie){ }
 		}
 		else{
 			while(!Control.fin){
@@ -95,8 +86,9 @@ public class Persona extends Thread {
 	private int plantaDestino(){
 		int numeroAleatorio;
 		do{
-			numeroAleatorio = semilla % numeroDePisos;
-			semilla = (semilla+1) % 100000;
+			numeroAleatorio = semilla2 % numeroDePisos;
+			semilla2 += semilla1;
+			semilla1 = semilla2 - semilla1;
 		}while(numeroAleatorio == pisoActual);
 		
 		return numeroAleatorio;
